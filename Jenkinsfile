@@ -41,7 +41,7 @@ pipeline {
     stage('Docker run') {
       steps {
         sh "docker run -d --name flask-app --network my-network flask-app:${params.IMAGE_TAG}"
-        sh "docker run -d --name nginx --network my-network -p 8080:80 nginx:${params.IMAGE_TAG}"
+        sh "docker run -d --name nginx --network my-network -p 80:80 nginx:${params.IMAGE_TAG}"
       }
     }
     stage('Smoke test') {
