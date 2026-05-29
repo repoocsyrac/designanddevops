@@ -11,6 +11,20 @@ pipeline {
     string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
   }
   stages {
+    stage('Run unit tests') {
+      steps {
+          script {
+              catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                  sh '''
+                      python3 -m venv .venv
+                      . .venv/bin/activate
+                      python3 -m unittest discover -s flask-app/tests
+                      deactivate
+                  '''
+              }
+          }
+      }
+    }
     stage('Docker cleanup') {
       steps {
         sh 'docker rm -f $(docker ps -aq) || true'
@@ -68,21 +82,6 @@ pipeline {
       steps {
         sh "docker run -d --name flask-app --network my-network flask-app:${params.IMAGE_TAG}"
         sh "docker run -d --name nginx --network my-network -p 80:80 nginx:${params.IMAGE_TAG}"
-      }
-    }
-    stage('Run unit tests') {
-      steps {
-          script {
-              catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-                  sh '''
-                      python3 -m venv .venv
-                      . .venv/bin/activate
-                      pip install -r tests/requirements.txt
-                      python3 -m unittest discover -s tests
-                      deactivate
-                  '''
-              }
-          }
       }
     }
     stage('Smoke test') {
