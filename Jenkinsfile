@@ -57,21 +57,19 @@ pipeline {
         sh "docker run -d --name nginx --network my-network -p 80:80 nginx:${params.IMAGE_TAG}"
       }
     }
-    stage('Setup test environment') {
-      steps {
-        sh 'docker build -t test-env -f tests/Dockerfile tests'
-        sh 'docker run -d --name test-env --network my-network test-env'
-      }
-    }
     stage('Run unit tests') {
-      agent {
-        docker {
-            image 'test-env'
-            reuseNode true
-        }
-      }
       steps {
-        sh "python -m unittest discover -s tests"
+          script {
+              catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                  sh '''
+                      python3 -m venv .venv
+                      . .venv/bin/activate
+                      pip install -r pipeline/requirements-unit-tests.txt
+                      python3 -m unittest discover -s tests .
+                      deactivate
+                  '''
+              }
+          }
       }
     }
     stage('Smoke test') {
