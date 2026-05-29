@@ -139,11 +139,11 @@ pipeline {
 }
 
 def checkImageSize = { imageName ->
-  def limitBytes = 200 * 1024 * 1024
+  def limitBytes = 200L * 1024 * 1024
   def size = sh(
     returnStdout: true,
     script: "docker image inspect ${imageName} --format='{{.Size}}'"
-  ).trim().toInteger()
+  ).trim().toLong()
 
   echo "${imageName} size: ${size} bytes"
 
