@@ -59,6 +59,7 @@ pipeline {
           steps {
             sh "docker build -t flask-app:${params.IMAGE_TAG} -f flask-app/Dockerfile flask-app"
             sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-flask-image-report.json || true"
+            checkImageSize("flask-app:${params.IMAGE_TAG}")
           }
           post {
             always {
@@ -70,6 +71,7 @@ pipeline {
           steps {
             sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
             sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
+            checkImageSize("nginx:${params.IMAGE_TAG}")
           }
           post {
             always {
@@ -120,5 +122,19 @@ pipeline {
       sh 'docker rmi -f $(docker images -aq) || true'
       sh 'docker network rm my-network || true'
     }
+  }
+}
+
+def checkImageSize = { imageName ->
+  def limitBytes = 200 * 1024 * 1024
+  def size = sh(
+    returnStdout: true,
+    script: "docker image inspect ${imageName} --format='{{.Size}}'"
+  ).trim().toInteger()
+
+  echo "${imageName} size: ${size} bytes"
+
+  if (size > limitBytes) {
+    error "${imageName} is over 200MB"
   }
 }
