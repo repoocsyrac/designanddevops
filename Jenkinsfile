@@ -14,6 +14,7 @@ pipeline {
   }
   parameters {
     string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
+    booleanParam(name: 'SLIM', defaultValue: false, description: 'Build slim image?')
   }
   stages {
     stage('Initialise env vars') {
@@ -21,6 +22,10 @@ pipeline {
         script {
           env.FLASK_IMAGE_NAME = "flask-app:${params.IMAGE_TAG}"
           env.NGINX_IMAGE_NAME = "nginx:${params.IMAGE_TAG}"
+          if (params.USE_SLIM) {
+            env.FLASK_IMAGE_NAME = "flask-app:${params.IMAGE_TAG}-slim"
+            env.NGINX_IMAGE_NAME = "nginx:${params.IMAGE_TAG}-slim"
+          }
         }
       }
     }
@@ -67,6 +72,9 @@ pipeline {
       }
     }
     stage('Build and scan images') {
+      when {
+        expression { return !params.USE_SLIM }
+      }
       parallel {
         stage('Build and scan flask-app') {
           steps {
@@ -83,6 +91,37 @@ pipeline {
         stage('Build and scan nginx') {
           steps {
             sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
+            sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
+            //checkImageSize("nginx:${params.IMAGE_TAG}")
+          }
+          post {
+            always {
+                archiveArtifacts artifacts: 'trivy-nginx-image-report.json', onlyIfSuccessful: true
+            }
+          }
+        }
+      }
+    }
+    stage('Build and scan slim images') {
+      when {
+        expression { return params.USE_SLIM }
+      }
+      parallel {
+        stage('Build and scan slim flask-app') {
+          steps {
+            sh "slim build -t flask-app:${params.IMAGE_TAG} -f flask-app/Dockerfile flask-app"
+            sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-flask-image-report.json || true"
+            //checkImageSize("flask-app:${params.IMAGE_TAG}")
+          }
+          post {
+            always {
+                archiveArtifacts artifacts: 'trivy-flask-image-report.json', onlyIfSuccessful: true
+            }
+          }
+        }
+        stage('Build and scan slim nginx') {
+          steps {
+            sh "slim build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
             sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
             //checkImageSize("nginx:${params.IMAGE_TAG}")
           }
