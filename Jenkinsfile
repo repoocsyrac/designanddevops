@@ -71,7 +71,7 @@ pipeline {
         }
       }
       steps {
-        sh "python -m unittest discover -s flask-app/tests"
+        sh "python -m unittest discover -s tests"
       }
     }
     stage('Smoke test') {
