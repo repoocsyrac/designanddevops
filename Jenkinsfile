@@ -57,10 +57,16 @@ pipeline {
         sh "docker run -d --name nginx --network my-network -p 80:80 nginx:${params.IMAGE_TAG}"
       }
     }
+    stage('Setup test environment') {
+      steps {
+        sh 'docker build -t test-env -f tests/Dockerfile tests'
+        sh 'docker run -d --name test-env --network my-network test-env'
+      }
+    }
     stage('Run unit tests') {
       agent {
         docker {
-            image 'python:3.13-slim'
+            image 'test-env'
             reuseNode true
         }
       }
