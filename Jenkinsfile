@@ -57,12 +57,6 @@ pipeline {
         sh "docker run -d --name nginx --network my-network -p 80:80 nginx:${params.IMAGE_TAG}"
       }
     }
-    stage('Smoke test') {
-      steps {
-        sh "sleep 5"
-        sh "curl -f http://localhost:80 || exit 1"
-      }
-    }
     stage('Run unit tests') {
       agent {
         docker {
@@ -72,6 +66,12 @@ pipeline {
       }
       steps {
         sh "python -m unittest discover -s flask-app/tests"
+      }
+    }
+    stage('Smoke test') {
+      steps {
+        sh "sleep 5"
+        sh "curl -f http://localhost:80 || exit 1"
       }
     }
     stage('Approve push') {
