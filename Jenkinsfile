@@ -66,8 +66,14 @@ pipeline {
         steps {
             sh "docker tag flask-app:${params.IMAGE_TAG} syraccc/flask-app:${params.IMAGE_TAG}"
             sh "docker tag nginx:${params.IMAGE_TAG} syraccc/nginx:${params.IMAGE_TAG}"
-            sh "docker push syraccc/flask-app:${params.IMAGE_TAG}"
-            sh "docker push syraccc/nginx:${params.IMAGE_TAG}"
+            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                  usernameVariable: 'DOCKER_USERNAME',
+                                  passwordVariable: 'DOCKER_PASSWORD')]) {
+              sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+              sh "docker push syraccc/flask-app:${params.IMAGE_TAG}"
+              sh "docker push syraccc/nginx:${params.IMAGE_TAG}"
+              sh 'docker logout'
+            }
         }
     }
     
