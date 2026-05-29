@@ -64,9 +64,9 @@ pipeline {
     }
     stage('Docker cleanup') {
       steps {
-        sh "docker rm -f {$(docker ps -aq)} || true"
-        sh "docker rmi -f {$(docker images -aq)} || true"
-        sh "docker network rm my-network || true"
+        sh 'docker rm -f $(docker ps -aq) || true'
+        sh 'docker rmi -f $(docker images -aq) || true'
+        sh 'docker network rm my-network || true'
       }
     }
   }
