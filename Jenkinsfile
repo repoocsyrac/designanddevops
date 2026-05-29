@@ -53,7 +53,8 @@ pipeline {
     }
     stage('Smoke test') {
       steps {
-        sh "curl -f http://localhost:5000 || exit 1"
+        sh "curl -f http://localhost:5500 || exit 1"
+        sh "curl -f http://localhost:80 || exit 1"
       }
     }
     stage('Approve push') {
