@@ -20,11 +20,6 @@ pipeline {
         sh 'docker network rm my-network || true'
       }
     }
-    stage('Run tests') {
-      steps {
-        sh "pwd"
-      }
-    }
     stage('Run security check') {
       steps {
         sh "pwd"
@@ -55,6 +50,11 @@ pipeline {
       steps {
         sh "sleep 5"
         sh "curl -f http://localhost:80 || exit 1"
+      }
+    }
+    stage('Run unit tests') {
+      steps {
+        sh "python -m unittest discover -s flask-app/tests"
       }
     }
     stage('Approve push') {
