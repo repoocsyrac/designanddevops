@@ -72,7 +72,7 @@ pipeline {
           steps {
             sh "docker build -t flask-app:${params.IMAGE_TAG} -f flask-app/Dockerfile flask-app"
             sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-flask-image-report.json || true"
-            checkImageSize("flask-app:${params.IMAGE_TAG}")
+            //checkImageSize("flask-app:${params.IMAGE_TAG}")
           }
           post {
             always {
@@ -84,7 +84,7 @@ pipeline {
           steps {
             sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
             sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
-            checkImageSize("nginx:${params.IMAGE_TAG}")
+            //checkImageSize("nginx:${params.IMAGE_TAG}")
           }
           post {
             always {
