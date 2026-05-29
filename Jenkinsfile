@@ -11,20 +11,34 @@ pipeline {
     string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
   }
   stages {
-    stage('Run unit tests') {
-      steps {
-          script {
-              catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-                  sh '''
-                      python3 -m venv .venv
-                      . .venv/bin/activate
-                      cd flask-app
-                      pip install -r requirements.txt
-                      python3 -m unittest discover -s tests
-                      deactivate
-                  '''
+    stage('Run tests') {
+      parallel {
+        stage('Run unit tests') {
+          steps {
+              script {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                      sh '''
+                          python3 -m venv .venv
+                          . .venv/bin/activate
+                          cd flask-app
+                          pip install -r requirements.txt
+                          python3 -m unittest discover -s tests
+                          deactivate
+                      '''
+                }
               }
           }
+        }
+        stage('Run trivy filesystem scan') {
+          steps {
+            sh "trivy fs --format json --output trivy-fs-report.json . || true"
+          }
+          post {
+            always {
+                archiveArtifacts artifacts: 'trivy-fs-report.json', onlyIfSuccessful: true
+            }
+          }
+        }
       }
     }
     stage('Docker cleanup') {
@@ -32,16 +46,6 @@ pipeline {
         sh 'docker rm -f $(docker ps -aq) || true'
         sh 'docker rmi -f $(docker images -aq) || true'
         sh 'docker network rm my-network || true'
-      }
-    }
-    stage('Run Trivy filesystem scan') {
-      steps {
-        sh "trivy fs --format json --output trivy-fs-report.json . || true"
-      }
-      post {
-        always {
-            archiveArtifacts artifacts: 'trivy-fs-report.json', onlyIfSuccessful: true
-        }
       }
     }
     stage('Docker setup'){
