@@ -15,13 +15,11 @@ pipeline {
     }
     stage('Run tests') {
       steps {
-        # TODO: run unit tests
         sh "pwd"
       }
     }
     stage('Run security check') {
       steps {
-        #TODO: run trivy
         sh "pwd"
       }
     }
