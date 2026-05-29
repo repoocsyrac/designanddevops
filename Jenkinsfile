@@ -2,6 +2,11 @@ pipeline {
   agent any
   environment {
     DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+    DOCKER_NETWORK = "my-network"
+    NGINX_CONTAINER_NAME = "nginx"
+    FLASK_CONTAINER_NAME = "flask-app"
+    NGINX_PORT = 80
+    FLASK_PORT = 5000
   }
   options {
     timestamps()
@@ -11,6 +16,14 @@ pipeline {
     string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
   }
   stages {
+    stage('Initialise env vars') {
+      steps {
+        script {
+          env.FLASK_IMAGE_NAME = "flask-app:${params.IMAGE_TAG}"
+          env.NGINX_IMAGE_NAME = "nginx:${params.IMAGE_TAG}"
+        }
+      }
+    }
     stage('Run tests') {
       parallel {
         stage('Run unit tests') {
@@ -88,14 +101,14 @@ pipeline {
     }
     stage('Docker run') {
       steps {
-        sh "docker run -d --name flask-app --network my-network flask-app:${params.IMAGE_TAG}"
-        sh "docker run -d --name nginx --network my-network -p 80:80 nginx:${params.IMAGE_TAG}"
+        sh "docker run -d --name ${env.FLASK_CONTAINER_NAME} --network ${env.DOCKER_NETWORK} ${env.FLASK_IMAGE_NAME}"
+        sh "docker run -d --name ${env.NGINX_CONTAINER_NAME} --network ${env.DOCKER_NETWORK} -p ${env.NGINX_PORT}:${env.NGINX_PORT} ${env.NGINX_IMAGE_NAME}"
       }
     }
     stage('Smoke test') {
       steps {
         sh "sleep 5"
-        sh "curl -f http://localhost:80 || exit 1"
+        sh "curl -f http://localhost:${env.NGINX_PORT} || exit 1"
       }
     }
     stage('Approve push') {
@@ -105,11 +118,11 @@ pipeline {
     }
     stage('Docker push') {
         steps {
-            sh "docker tag flask-app:${params.IMAGE_TAG} syraccc/flask-app:${params.IMAGE_TAG}"
-            sh "docker tag nginx:${params.IMAGE_TAG} syraccc/nginx:${params.IMAGE_TAG}"
+            sh "docker tag flask-app:${params.IMAGE_TAG} $DOCKERHUB_CREDENTIALS_USR/flask-app:${params.IMAGE_TAG}"
+            sh "docker tag nginx:${params.IMAGE_TAG} $DOCKERHUB_CREDENTIALS_USR/nginx:${params.IMAGE_TAG}"
             sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-            sh "docker push syraccc/flask-app:${params.IMAGE_TAG}"
-            sh "docker push syraccc/nginx:${params.IMAGE_TAG}"
+            sh "docker push $DOCKERHUB_CREDENTIALS_USR/flask-app:${params.IMAGE_TAG}"
+            sh "docker push $DOCKERHUB_CREDENTIALS_USR/nginx:${params.IMAGE_TAG}"
             sh 'docker logout'
 
         }
