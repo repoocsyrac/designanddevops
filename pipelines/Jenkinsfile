@@ -1,9 +1,18 @@
 pipeline {
   agent any
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
   parameters {
-    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to build and push')
+    string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
   }
   stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
     stage('Run tests') {
       steps {
         # TODO: run unit tests
