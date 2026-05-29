@@ -64,6 +64,12 @@ pipeline {
       }
     }
     stage('Run unit tests') {
+      agent {
+        docker {
+            image 'python:3.13-slim'
+            reuseNode true
+        }
+      }
       steps {
         sh "python -m unittest discover -s flask-app/tests"
       }
