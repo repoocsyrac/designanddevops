@@ -13,6 +13,13 @@ pipeline {
         checkout scm
       }
     }
+    stage('Docker cleanup') {
+      steps {
+        sh 'docker rm -f $(docker ps -aq) || true'
+        sh 'docker rmi -f $(docker images -aq) || true'
+        sh 'docker network rm my-network || true'
+      }
+    }
     stage('Run tests') {
       steps {
         sh "pwd"
@@ -62,12 +69,6 @@ pipeline {
             sh "docker push syraccc/nginx:${params.IMAGE_TAG}"
         }
     }
-    stage('Docker cleanup') {
-      steps {
-        sh 'docker rm -f $(docker ps -aq) || true'
-        sh 'docker rmi -f $(docker images -aq) || true'
-        sh 'docker network rm my-network || true'
-      }
-    }
+    
   }
 }
