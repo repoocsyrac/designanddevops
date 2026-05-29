@@ -17,7 +17,12 @@ pipeline {
     }
     stage('Run Trivy filesystem scan') {
       steps {
-        sh "trivy fs . || true"
+        sh "trivy fs --format json --output trivy-fs-report.json . || true"
+      }
+      post {
+        always {
+            archiveArtifacts artifacts: 'trivy-fs-report.json', onlyIfSuccessful: true
+        }
       }
     }
     stage('Docker setup'){
@@ -37,8 +42,14 @@ pipeline {
     }
     stage('Run Trivy image scan') {
       steps {
-        sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL || true"
-        sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL || true"
+        sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-flask-image-report.json || true"
+        sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
+      }
+      post {
+        always {
+            archiveArtifacts artifacts: 'trivy-flask-image-report.json', onlyIfSuccessful: true
+            archiveArtifacts artifacts: 'trivy-nginx-image-report.json', onlyIfSuccessful: true
+        }
       }
     }
     stage('Approve run containers') {
@@ -93,5 +104,12 @@ pipeline {
         }
     }
     
+  }
+  post {
+    always {
+      sh 'docker rm -f $(docker ps -aq) || true'
+      sh 'docker rmi -f $(docker images -aq) || true'
+      sh 'docker network rm my-network || true'
+    }
   }
 }
