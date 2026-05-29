@@ -14,7 +14,7 @@ pipeline {
   }
   parameters {
     string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
-    booleanParam(name: 'SLIM', defaultValue: false, description: 'Build slim image?')
+    booleanParam(name: 'USE_SLIM', defaultValue: false, description: 'Build slim image?')
   }
   stages {
     stage('Initialise env vars') {
