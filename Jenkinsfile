@@ -64,7 +64,7 @@ pipeline {
                   sh '''
                       python3 -m venv .venv
                       . .venv/bin/activate
-                      pip install -r pipeline/requirements-unit-tests.txt
+                      pip install -r tests/requirements.txt
                       python3 -m unittest discover -s tests .
                       deactivate
                   '''
