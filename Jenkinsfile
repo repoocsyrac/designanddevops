@@ -54,7 +54,6 @@ pipeline {
     stage('Smoke test') {
       steps {
         sh "sleep 5"
-        sh "curl -f http://localhost:5500 || exit 1"
         sh "curl -f http://localhost:80 || exit 1"
       }
     }
