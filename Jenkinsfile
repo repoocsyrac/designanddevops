@@ -33,25 +33,29 @@ pipeline {
         sh "docker network create my-network || true"
       }
     }
-    stage('Docker build flask-app') {
-      steps {
-        sh "docker build -t flask-app:${params.IMAGE_TAG} -f flask-app/Dockerfile flask-app"
-      }
-    }
-    stage('Docker build nginx') {
-      steps {
-        sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
-      }
-    }
-    stage('Run Trivy image scan') {
-      steps {
-        sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-flask-image-report.json || true"
-        sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
-      }
-      post {
-        always {
-            archiveArtifacts artifacts: 'trivy-flask-image-report.json', onlyIfSuccessful: true
-            archiveArtifacts artifacts: 'trivy-nginx-image-report.json', onlyIfSuccessful: true
+    stage('Build and scan images') {
+      parallel {
+        stage('Build and scan flask-app') {
+          steps {
+            sh "docker build -t flask-app:${params.IMAGE_TAG} -f flask-app/Dockerfile flask-app"
+            sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-flask-image-report.json || true"
+          }
+          post {
+            always {
+                archiveArtifacts artifacts: 'trivy-flask-image-report.json', onlyIfSuccessful: true
+            }
+          }
+        }
+        stage('Build and scan nginx') {
+          steps {
+            sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
+            sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL --format json --output trivy-nginx-image-report.json || true"
+          }
+          post {
+            always {
+                archiveArtifacts artifacts: 'trivy-nginx-image-report.json', onlyIfSuccessful: true
+            }
+          }
         }
       }
     }
