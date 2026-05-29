@@ -42,13 +42,13 @@ pipeline {
     }
     stage('Run Trivy image scan') {
       steps {
-        sh "trivy image flask-app:${params.IMAGE_TAG} || true"
-        sh "trivy image nginx:${params.IMAGE_TAG} || true"
+        sh "trivy image flask-app:${params.IMAGE_TAG} --severity HIGH,CRITICAL || true"
+        sh "trivy image nginx:${params.IMAGE_TAG} --severity HIGH,CRITICAL || true"
       }
     }
     stage('Approve run containers') {
         steps {
-            input "Approve running the containers for testing?"
+            input "WARNING:don't approve unless scan results have been checked."
         }
     }
     stage('Docker run') {
