@@ -8,11 +8,6 @@ pipeline {
     string(name: 'IMAGE_TAG', defaultValue: "build-${env.BUILD_NUMBER}", description: 'Docker image tag to build and push')
   }
   stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
     stage('Docker cleanup') {
       steps {
         sh 'docker rm -f $(docker ps -aq) || true'
