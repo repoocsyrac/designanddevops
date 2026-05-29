@@ -30,12 +30,12 @@ pipeline {
     }
     stage('Docker build flask-app') {
       steps {
-        sh "docker build -t flask-app:${params.IMAGE_TAG} -f ../flask-app/Dockerfile ../flask-app"
+        sh "docker build -t flask-app:${params.IMAGE_TAG} -f flask-app/Dockerfile flask-app"
       }
     }
     stage('Docker build nginx') {
       steps {
-        sh "docker build -t nginx:${params.IMAGE_TAG} -f ../nginx/Dockerfile ../nginx"
+        sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
       }
     }
     stage('Docker run') {
