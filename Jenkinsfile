@@ -20,9 +20,9 @@ pipeline {
         sh 'docker network rm my-network || true'
       }
     }
-    stage('Run security check') {
+    stage('Run Trivy filesystem scan') {
       steps {
-        sh "pwd"
+        sh "trivy fs . || true"
       }
     }
     stage('Docker setup'){
@@ -39,6 +39,17 @@ pipeline {
       steps {
         sh "docker build -t nginx:${params.IMAGE_TAG} -f nginx/Dockerfile nginx"
       }
+    }
+    stage('Run Trivy image scan') {
+      steps {
+        sh "trivy image flask-app:${params.IMAGE_TAG} || true"
+        sh "trivy image nginx:${params.IMAGE_TAG} || true"
+      }
+    }
+    stage('Approve run containers') {
+        steps {
+            input "Approve running the containers for testing?"
+        }
     }
     stage('Docker run') {
       steps {
